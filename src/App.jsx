@@ -1,26 +1,27 @@
-import { useState } from "react";
-import { MdDeleteForever } from "react-icons/md";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { MdDeleteForever, MdDateRange } from "react-icons/md";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./index.css"; // Ensure you have Tailwind CSS imported
 
 function App() {
-  const [todos, setTodos] = useState([]);
-  const [input, setInput] = useState("");
-  const [selectedOption, setSelectedOption] = useState("Low");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [displayedDate, setDisplayedDate] = useState("");
+  const { register, handleSubmit, setValue,  watch, formState: { errors } } = useForm();
+  const [todos, setTodos] = React.useState([]);
+  const selectedDate = watch("selectedDate");
 
-  const addTodo = () => {
-    console.log("Adding todo:", input, selectedOption, selectedDate); // Logging for debugging
-    if (input.trim() !== "" && selectedDate !== "") {
+
+  const addTodo = (data) => {
+    const { input, selectedDate, priority } = data;
+    if (input.trim() !== "" && selectedDate) {
       const newTodo = {
         text: input,
-        priority: selectedOption,
-        date: selectedDate,
+        priority,
+        date: new Date(selectedDate).toISOString().split('T')[0],
       };
-      console.log("New todo:", newTodo); // Logging for debugging
       setTodos([...todos, newTodo]);
-      setInput("");
-      console.log("Todos after addition:", [...todos, newTodo]); // Logging for debugging
+      setValue("input", "");
+   
     }
   };
 
@@ -29,52 +30,70 @@ function App() {
     setTodos(updatedTodos);
   };
 
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-    setDisplayedDate(e.target.value);
+  const handleDateChange = (date) => {
+    setValue("selectedDate", date);
+    const currentDate = new Date().toISOString().slice(0, 10);
+    if (date.toISOString().slice(0, 10) < currentDate) {
+      setValue("dateError", true);
+    } else {
+      setValue("dateError", false);
+    }
   };
 
   return (
     <div className="min-h-screen w-full bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
-        <div className="flex items-center justify-around">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={handleDateChange}
-            className="p-2 border border-gray-300 rounded mr-2"
-          />
-          <h1 className="text-2xl font-bold mb-4 text-center">Todo List</h1>
-          <div className="flex items-center">
-            <h1 className="text-xl font-semi-bold mr-2">Date:</h1>
-            <span className="text-xl">{displayedDate}</span>
+        <form onSubmit={handleSubmit(addTodo)}>
+          <div className="flex items-center justify-between">
+            <DatePicker
+              selected={selectedDate}
+              onChange={handleDateChange}
+              minDate={new Date()}
+              customInput={
+                <button type="button" className="p-2 border border-gray-300 rounded bg-white hover:bg-gray-200">
+                  <MdDateRange size={24} />
+                </button>
+              }
+              dateFormat="yyyy-MM-dd"
+            />
+            <h1 className="text-2xl font-bold mb-4 text-center">Todo List</h1>
+            <div className="flex items-center">
+              <h1 className="text-xl font-semi-bold mr-2">Date:</h1>
+              <span className="text-xl">{selectedDate ? new Date(selectedDate).toISOString().split('T')[0] : ''}</span>
+            </div>
           </div>
-        </div>
-        <div className="flex mb-4">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="flex-grow p-2 border border-gray-300 rounded mr-2"
-            placeholder="Add a new todo"
-          />
-          <select
-            value={selectedOption}
-            onChange={(e) => setSelectedOption(e.target.value)}
-            className="p-2 border border-gray-300 rounded mr-2"
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-
-          <button
-            onClick={addTodo}
-            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          >
-            Add
-          </button>
-        </div>
+          <label htmlFor="priority-select" className="mr-2 font-bold">Priority</label>
+          {errors.dateError && (
+            <p className="text-red-500 text-sm mt-1 mb-4">
+              Please select today or an upcoming date!
+            </p>
+          )}
+          <div className="flex mb-4">
+            <select
+              id="priority-select"
+              {...register("priority")}
+              defaultValue="Low"
+              className="p-2 border border-gray-300 rounded mr-2"
+            >
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+            <input
+              type="text"
+              {...register("input", { required: true })}
+              className="flex-grow p-2 border border-gray-300 rounded mr-2"
+              placeholder="Add a new todo"
+            />
+            <button
+              type="submit"
+              disabled={errors.dateError || !selectedDate}
+              className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${errors.dateError || !selectedDate ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              Add
+            </button>
+          </div>
+        </form>
         <ul className="list-disc pl-5">
           {todos.map((todo, index) => (
             <li
