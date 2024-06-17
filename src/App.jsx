@@ -3,13 +3,19 @@ import { useForm } from "react-hook-form";
 import { MdDeleteForever, MdDateRange } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import axios from "axios";
 import "./index.css"; // Ensure you have Tailwind CSS imported
 
 function App() {
-  const { register, handleSubmit, setValue,  watch, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm();
   const [todos, setTodos] = React.useState([]);
   const selectedDate = watch("selectedDate");
-
 
   const addTodo = (data) => {
     const { input, selectedDate, priority } = data;
@@ -17,11 +23,10 @@ function App() {
       const newTodo = {
         text: input,
         priority,
-        date: new Date(selectedDate).toISOString().split('T')[0],
+        date: new Date(selectedDate).toISOString().split("T")[0],
       };
       setTodos([...todos, newTodo]);
       setValue("input", "");
-   
     }
   };
 
@@ -40,6 +45,25 @@ function App() {
     }
   };
 
+  const saveTodos = async (data) => {
+    const email = data.email; // Get the email from form data
+    try {
+      const response = await axios.post("http://localhost:5000/todos", {
+        email,
+        totalTodos: todos.length,
+        todos
+      });
+
+      if (response.status === 200) {
+        console.log("Todos saved successfully");
+      } else {
+        console.error("Failed to save todos");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
@@ -50,7 +74,10 @@ function App() {
               onChange={handleDateChange}
               minDate={new Date()}
               customInput={
-                <button type="button" className="p-2 border border-gray-300 rounded bg-white hover:bg-gray-200">
+                <button
+                  type="button"
+                  className="p-2 border border-gray-300 rounded bg-white hover:bg-gray-200"
+                >
                   <MdDateRange size={24} />
                 </button>
               }
@@ -59,10 +86,16 @@ function App() {
             <h1 className="text-2xl font-bold mb-4 text-center">Todo List</h1>
             <div className="flex items-center">
               <h1 className="text-xl font-semi-bold mr-2">Date:</h1>
-              <span className="text-xl">{selectedDate ? new Date(selectedDate).toISOString().split('T')[0] : ''}</span>
+              <span className="text-xl">
+                {selectedDate
+                  ? new Date(selectedDate).toISOString().split("T")[0]
+                  : ""}
+              </span>
             </div>
           </div>
-          <label htmlFor="priority-select" className="mr-2 font-bold">Priority</label>
+          <label htmlFor="priority-select" className="mr-2 font-bold">
+            Priority
+          </label>
           {errors.dateError && (
             <p className="text-red-500 text-sm mt-1 mb-4">
               Please select today or an upcoming date!
@@ -88,11 +121,34 @@ function App() {
             <button
               type="submit"
               disabled={errors.dateError || !selectedDate}
-              className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${errors.dateError || !selectedDate ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
+                errors.dateError || !selectedDate
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
             >
               Add
             </button>
           </div>
+        </form>
+        <form onSubmit={handleSubmit(saveTodos)}>
+          <div className="mb-4">
+            <label htmlFor="email" className="font-bold mr-2">Email:</label>
+            <input
+              type="email"
+              id="email"
+              {...register("email", { required: true })}
+              className="p-2 border border-gray-300 rounded w-full"
+              placeholder="Enter your email"
+            />
+            {errors.email && <p className="text-red-500 text-sm mt-1">Email is required</p>}
+          </div>
+          <button
+            type="submit"
+            className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mb-4"
+          >
+            Save
+          </button>
         </form>
         <ul className="list-disc pl-5">
           {todos.map((todo, index) => (
