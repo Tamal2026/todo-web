@@ -45,12 +45,9 @@ function App() {
     }
   };
 
-  const saveTodos = async (data) => {
-    const email = data.email; // Get the email from form data
+  const saveTodos = async () => {
     try {
       const response = await axios.post("http://localhost:5000/todos", {
-        email,
-        totalTodos: todos.length,
         todos
       });
 
@@ -118,38 +115,32 @@ function App() {
               className="flex-grow p-2 border border-gray-300 rounded mr-2"
               placeholder="Add a new todo"
             />
-            <button
-              type="submit"
-              disabled={errors.dateError || !selectedDate}
-              className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
-                errors.dateError || !selectedDate
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
-            >
-              Add
-            </button>
+            <div className="relative group">
+              <button
+                type="submit"
+                disabled={errors.dateError || !selectedDate}
+                className={`bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
+                  errors.dateError || !selectedDate
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+              >
+                Add
+              </button>
+              {(errors.dateError || !selectedDate) && (
+                <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-36  text-white text-xs rounded py-1 px-2 text-center opacity-0 group-hover:opacity-100 group-hover:text-red-500">
+                  {errors.dateError ? "Invalid date" : "Select a date first"}
+                </span>
+              )}
+            </div>
           </div>
         </form>
-        <form onSubmit={handleSubmit(saveTodos)}>
-          <div className="mb-4">
-            <label htmlFor="email" className="font-bold mr-2">Email:</label>
-            <input
-              type="email"
-              id="email"
-              {...register("email", { required: true })}
-              className="p-2 border border-gray-300 rounded w-full"
-              placeholder="Enter your email"
-            />
-            {errors.email && <p className="text-red-500 text-sm mt-1">Email is required</p>}
-          </div>
-          <button
-            type="submit"
-            className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mb-4"
-          >
-            Save
-          </button>
-        </form>
+        <button
+          onClick={saveTodos}
+          className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mb-4"
+        >
+          Save
+        </button>
         <ul className="list-disc pl-5">
           {todos.map((todo, index) => (
             <li
